@@ -68,6 +68,15 @@
       opacity: 0.5;
     }
 
+    @media (hover: none) and (pointer: coarse) {
+      .cursor, .cursor-ring {
+        display: none !important;
+      }
+      body {
+        cursor: auto !important;
+      }
+    }
+
     /* Scanlines overlay */
     body::before {
       content: '';
@@ -133,6 +142,21 @@
       gap: 32px;
     }
 
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      z-index: 101;
+    }
+
+    .nav-toggle span {
+      width: 24px;
+      height: 2px;
+      background: var(--green);
+      transition: all 0.3s ease;
+    }
+
     .nav-links a {
       color: var(--text2);
       text-decoration: none;
@@ -164,6 +188,16 @@
       gap: 8px;
       font-size: 11px;
       color: var(--text2);
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 480px) {
+      .status-text {
+        display: none;
+      }
+      .nav-logo {
+        font-size: 12px;
+      }
     }
 
     .status-dot {
@@ -277,6 +311,10 @@
       box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
     }
 
+    .btn-primary:active, .btn-secondary:active {
+      transform: translateY(0) scale(0.98);
+    }
+
     .btn-secondary {
       display: inline-flex;
       align-items: center;
@@ -315,6 +353,20 @@
     @media (min-width: 1100px) {
       .hero-terminal {
         display: block;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .hero {
+        text-align: center;
+        justify-content: center;
+      }
+      .hero-desc {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .hero-actions {
+        justify-content: center;
       }
     }
 
@@ -947,6 +999,12 @@
       transform: translateY(0);
     }
 
+    /* Prevent text selection on custom elements */
+    .nav-toggle, .btn-primary, .btn-secondary, .skill-tag {
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* Scrollbar */
     ::-webkit-scrollbar {
       width: 4px;
@@ -962,26 +1020,92 @@
 
     @media (max-width: 768px) {
       nav {
-        padding: 16px 20px;
+        padding: 16px 24px;
       }
 
       .nav-links {
-        display: none;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        height: 100vh;
+        width: 80%;
+        max-width: 300px;
+        background: var(--bg2);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 1px solid var(--border);
+        z-index: 100;
+        display: flex; /* Override previous display: none */
+        backdrop-filter: blur(20px);
+      }
+
+      .nav-links.active {
+        right: 0;
+      }
+
+      .nav-links a {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .nav-toggle {
+        display: flex;
+      }
+
+      .nav-toggle.active span:nth-child(1) {
+        transform: translateY(8px) rotate(45deg);
+      }
+      .nav-toggle.active span:nth-child(2) {
+        opacity: 0;
+      }
+      .nav-toggle.active span:nth-child(3) {
+        transform: translateY(-8px) rotate(-45deg);
       }
 
       .hero {
-        padding: 100px 20px 60px;
+        padding: 120px 24px 60px;
+      }
+
+      .hero-name {
+        font-size: clamp(40px, 12vw, 64px);
       }
 
       section {
-        padding: 60px 20px;
+        padding: 80px 24px;
+      }
+
+      .section-title {
+        font-size: 28px;
+      }
+
+      .about-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .skills-grid, .learning-grid, .cert-grid {
+        grid-template-columns: 1fr;
       }
 
       footer {
-        padding: 24px 20px;
+        padding: 32px 24px;
         flex-direction: column;
-        gap: 8px;
+        gap: 16px;
         text-align: center;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      section {
+        padding: 80px 40px;
+      }
+      .about-grid {
+        gap: 40px;
+      }
+      .skills-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
   </style>
@@ -995,7 +1119,7 @@
   <!-- NAV -->
   <nav>
     <div class="nav-logo">Suman_npn</div>
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       <a href="#about">about</a>
       <a href="#skills">skills</a>
       <a href="#projects">projects</a>
@@ -1003,9 +1127,14 @@
       <a href="#certifications">certs</a>
       <a href="#contact">contact</a>
     </div>
+    <div class="nav-toggle" id="navToggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
     <div class="nav-status">
       <div class="status-dot"></div>
-      <span>open to work</span>
+      <span class="status-text">open to work</span>
     </div>
   </nav>
 
@@ -1356,8 +1485,30 @@
     document.querySelectorAll('a[href^="#"]').forEach(a => {
       a.addEventListener('click', e => {
         e.preventDefault();
-        document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+          navLinks.classList.remove('active');
+          navToggle.classList.remove('active');
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
       });
+    });
+
+    // Mobile menu toggle
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    navToggle.addEventListener('click', () => {
+      navToggle.classList.toggle('active');
+      navLinks.classList.toggle('active');
+    });
+
+    // Close menu on click outside
+    document.addEventListener('click', (e) => {
+      if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) {
+        navToggle.classList.remove('active');
+        navLinks.classList.remove('active');
+      }
     });
   </script>
 </body>
